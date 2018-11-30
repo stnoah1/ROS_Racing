@@ -1,0 +1,17 @@
+<launch>
+	<!--Load a Map  -->
+	<arg name="map_file" default="$(find map_follower)/resources/map/hallway.yaml"/>
+	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
+
+	
+	<!--Hokuyo driver for UST-10LX, -135 to 135 deg, 10m range -->
+	<node pkg="urg_node" type="urg_node" name="run_hokuyo_10lx" >
+		<param name="ip_address" value="128.46.112.10"/>
+	</node>
+
+	<!--localization using amcl -->
+	<include file="$(find map_follower)/launch/amcl.launch"/> 
+	
+	<!--source code of path -->
+	<node pkg="map_follower" type="myRallyCarCode.py" output="screen" name="myRallyCarCode" />
+</launch>
