@@ -12,6 +12,7 @@ This is for ECET581 racing project
 * This module reads the serial data from IMU and publishs topic `imu_info` with the frequency same with the serial signal.
 ##### TODO
 * [ ] Working test
+* [ ] Add Kalman filter
 ### 3. MyRallyCarCode.py
 * This is the main running file which subscribes the topic `cur_pos` and send serial to rally car with the frequency of 150Hz.
 ##### TODO
