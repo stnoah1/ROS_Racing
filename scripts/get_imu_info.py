@@ -14,7 +14,11 @@ def parse_serial(serial_data):
 def get_serial_data():
   # todo:update
   pub = rospy.Publisher('imu_info', Float32, queue_size=10)
-  with serial.Serial("/dev/ttyACM0", baudrate=115200, timeout=1) as ser:
+  flag = True
+  with serial.Serial("/dev/ttyACM0", baudrate=115200) as ser:
+    if flag:
+      ser.write('IMU1')
+      flag = False
     # "I%+05d%+05d%+05dU"
     serial_data = ser.readline()
     ang_vel = parse_serial(serial_data)
