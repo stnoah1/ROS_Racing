@@ -9,6 +9,7 @@ class CurrentPosition:
     rospy.Subscriber("/amcl_pose", PoseWithCovarianceStamped, self.callback_pose)
     self.amcl_prev_x = None
     self.amcl_prev_y = None
+    self.rate = rospy.Rate(150)  # 150hz
 
   def get_angle(self):
     if not self.amcl_prev_x:
@@ -29,7 +30,6 @@ class CurrentPosition:
 
   def estimate_pos(self):
     """todo: modify function to estimate the pos"""
-
     cur_pose = Pose()
     cur_pose.x = self.amcl_x
     curr_pos.y = self.amcl_y
@@ -37,11 +37,10 @@ class CurrentPosition:
     return curr_pos
 
   def publish(self):
-    rate = rospy.Rate(150)  # 150hz
     while not rospy.is_shutdown():
       cur_pose = self.estimate_pos()
       self.pub.publish(cur_pose)
-      rate.sleep()
+      self.rate.sleep()
     rospy.spin()
 
 

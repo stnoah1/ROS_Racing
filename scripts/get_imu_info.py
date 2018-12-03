@@ -12,7 +12,7 @@ def parse_serial(serial_data):
 
 
 def get_serial_data():
-  """todo:update"""
+  # todo:update
   pub = rospy.Publisher('imu_info', Float32, queue_size=10)
   with serial.Serial("/dev/ttyACM0", baudrate=115200, timeout=1) as ser:
     # "I%+05d%+05d%+05dU"

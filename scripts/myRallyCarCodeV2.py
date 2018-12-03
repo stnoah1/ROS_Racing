@@ -7,7 +7,6 @@ import serial
 
 
 class RallyCar:
-
   def __init__(self, way_points):
     # Creates a node with name 'rallycar_controller' and make sure it is a unique node (using anonymous=True).
     rospy.init_node('rallycar_controller', anonymous=True)
@@ -15,11 +14,21 @@ class RallyCar:
     # A subscriber to the topic 'cur_pos'. self.update_pose is called
     # when a message of type Pose is received.
     self.pose_subscriber = rospy.Subscriber('cur_pos', Pose, self.update_pose)
-
+    # initialize parameters
     self.pose = Pose()
     self.rate = rospy.Rate(150)
-    self.distance_tolerance = 0.01
     self.way_points = way_points
+    self.prev_angular_vel_error = 0
+    self.angular_vel_error = 0
+    self.prev_linear_vel_error = 0
+    self.linear_vel_error = 0
+
+    # parameters to set up
+    self.distance_tolerance = 0.01
+    self.angular_vel_Kp = 100
+    self.angular_vel_Kd = 8
+    self.linear_vel_Kp = 100
+    self.linear_vel_Kd = 8
 
   def update_pose(self, data):
     """Callback function which is called when a new message of type Pose is
@@ -33,19 +42,26 @@ class RallyCar:
     return sqrt(pow((goal_pose.x - self.pose.x), 2) +
                 pow((goal_pose.y - self.pose.y), 2))
 
-  def linear_vel(self, goal_pose, Kp=6, Kd=1):
+  def linear_vel(self, goal_pose):
     """PD Controller for linear velocity"""
-    return Kp * self.euclidean_distance(goal_pose)
+    self.prev_linear_vel_error = self.linear_vel_error
+    self.linear_vel_error = self.euclidean_distance(goal_pose)
+    return self.linear_vel_Kp * self.linear_vel_error + \
+           self.linear_vel_Kd * (self.linear_vel_error - self.prev_linear_vel_error)
 
   def steering_angle(self, goal_pose):
     """angle between current pose and the goal"""
     return atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x)
 
-  def angular_vel(self, goal_pose, Kp=6, Kd=1):
+  def angular_vel(self, goal_pose):
     """PD Controller for angular velocity"""
-    return Kp * (self.steering_angle(goal_pose) - self.pose.theta)
+    self.prev_angular_vel_error = self.angular_vel_error
+    self.angular_vel_error = (self.steering_angle(goal_pose) - self.pose.theta)
+    return self.linear_vel_Kp * self.angular_vel_error + \
+           self.linear_vel_Kd * (self.angular_vel_error - self.prev_angular_vel_error)
 
   def send_serial(self, steering_angle, gas_pedal):
+    #todo: update
     serial_signal = "A+{}+{}".format("%04d" % steering_angle, "%04d" % gas_pedal)
     console_ser = serial.Serial("/dev/ttyACM0", baudrate=115200)
 
@@ -61,7 +77,7 @@ class RallyCar:
       goal_pose.y = way_point[1]
 
       while self.euclidean_distance(goal_pose) >= self.distance_tolerance:
-        # Publishing our vel_msg
+        # send serial
         self.send_serial(self.linear_vel(goal_pose), self.angular_vel(goal_pose))
 
         # Publish at the desired rate.
