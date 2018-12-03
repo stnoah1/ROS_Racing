@@ -10,7 +10,9 @@
 
 	<!--localization using amcl -->
 	<include file="$(find map_follower)/launch/amcl.launch"/> 
-	
+
 	<!--source code of path -->
-	<node pkg="map_follower" type="myRallyCarCode.py" output="screen" name="myRallyCarCode" />
+	<node pkg="map_follower" type="get_cur_pose.py" output="screen" name="cur_pose" />
+	<node pkg="map_follower" type="get_imu_info.py" output="screen" name="imu_info" />
+	<node pkg="map_follower" type="myRallyCarCodeV2.py" output="screen" name="myRallyCarCode" />
 </launch>
