@@ -1,6 +1,5 @@
 # Rally Car Racing
 This is for ECET581 racing project
-
 ## Description
 ### 1. get_cur_pos.py
 * This module subscribes the topic `amcl_pose`, `imu_info` and publishs topic `cur_pos` with the frequency of 150Hz
@@ -18,3 +17,26 @@ This is for ECET581 racing project
 ##### TODO
 * [ ] Working test
 * [ ] Adjust parameters
+
+## Install
+```bash
+$ cd ~/catkin_ws/src/
+$ git clone https://gitlab.com/stnoah1/ros_racing.git
+$ cd ~/catkin_ws && catkin_make
+$ cd ~/catkin_ws/src/ros_racing/scripts
+$ chmod +x *.py
+```
+## Run
+```bash
+$ cd ~/catkin_ws/src/
+$ source ~/catkin_ws/devel/setup.bash
+$ roscore
+```
+In another termianl
+
+```bash
+$ cd ~/catkin_ws/src/
+$ roslaunch map_follower map_following.launch
+```
+
+
