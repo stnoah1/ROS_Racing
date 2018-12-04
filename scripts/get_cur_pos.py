@@ -1,6 +1,6 @@
 import rospy
 from geometry_msgs.msg import PoseWithCovarianceStamped, Pose
-from math import atan2
+from math import atan2, pi
 
 
 class CurrentPosition:
@@ -13,7 +13,7 @@ class CurrentPosition:
 
   def get_angle(self):
     if not self.amcl_prev_x:
-      theta = atan2(self.amcl_y - self.amcl_prev_y, self.amcl_x - self.amcl_prev_x)
+      theta = atan2(self.amcl_y - self.amcl_prev_y, self.amcl_x - self.amcl_prev_x)*(180/pi)
     else:
       theta = 0
     return theta

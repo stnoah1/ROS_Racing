@@ -2,7 +2,7 @@
 
 import rospy
 from turtlesim.msg import Pose
-from math import pow, atan2, sqrt
+from math import pow, atan2, sqrt, pi
 import serial
 
 
@@ -51,7 +51,7 @@ class RallyCar:
 
   def steering_angle(self, goal_pose):
     """angle between current pose and the goal"""
-    return atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x)
+    return atan2(goal_pose.y - self.pose.y, goal_pose.x - self.pose.x)*(180/pi)
 
   def angular_vel(self, goal_pose):
     """PD Controller for angular velocity"""
