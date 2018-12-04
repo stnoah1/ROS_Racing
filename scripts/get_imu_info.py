@@ -29,12 +29,12 @@ def get_serial_data():
   while True:
     serial_data = ser.readline().strip()
     print(serial_data)
-    ang_vel = parse_serial(serial_data)
-    filtered_ang_vel = kalman_filter(ang_vel)
-    pub.publish(filtered_ang_vel)
+    if serial_data.startswith("I"):
+      ang_vel = parse_serial(serial_data)
+      filtered_ang_vel = kalman_filter(ang_vel)
+      pub.publish(filtered_ang_vel)
 
 
 if __name__ == "__main__":
-  print('test')
   rospy.init_node('imu_info', anonymous=True)
   get_serial_data()
