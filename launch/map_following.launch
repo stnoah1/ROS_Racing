@@ -1,6 +1,6 @@
 <launch>
 	<!--Load a Map  -->
-	<arg name="map_file" default="$(find map_follower)/resources/map/hallway.yaml"/>
+	<arg name="map_file" default="$(find map_follower)/resources/map/KNOY_speedway.yaml"/>
 	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 	
 	<!--Hokuyo driver for UST-10LX, -135 to 135 deg, 10m range -->
@@ -8,11 +8,17 @@
 		<param name="ip_address" value="128.46.112.10"/>
 	</node>
 
+	<!-- Visualisation RVIZ -->
+	<node pkg="rviz" type="rviz" name="rviz" />
+
+	<!-- python script: fetch way points and display on map -->
+	<node pkg="map_follower" type="way_point.py" output="screen" name="waypoint" />
+	
 	<!--localization using amcl -->
 	<include file="$(find map_follower)/launch/amcl.launch"/> 
 
 	<!--source code of path -->
-	<node pkg="map_follower" type="get_cur_pose.py" output="screen" name="cur_pose" />
-	<node pkg="map_follower" type="get_imu_info.py" output="screen" name="imu_info" />
-	<node pkg="map_follower" type="myRallyCarCodeV2.py" output="screen" name="myRallyCarCode" />
+	<node pkg="map_follower" type="get_cur_pos.py" output="screen" name="cur_pose" />
+	<!--<node pkg="map_follower" type="get_imu_info.py" output="screen" name="imu_info" />-->
+	<!--<node pkg="map_follower" type="myRallyCarCodeV2.py" output="screen" name="myRallyCarCode" />-->
 </launch>

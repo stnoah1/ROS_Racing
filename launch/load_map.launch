@@ -1,7 +1,7 @@
 <launch>	
 
 	<!-- Load a Map  -->
-	<arg name="map_file" default="$(find map_follower)/resources/map/hallway.yaml"/>
+	<arg name="map_file" default="$(find map_follower)/resources/map/KNOY_speedway.yaml"/>
 	<node name="map_server" pkg="map_server" type="map_server" args="$(arg map_file)" />
 
 	<!-- Visualisation RVIZ -->

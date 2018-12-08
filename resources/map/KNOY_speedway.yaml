@@ -1,4 +1,4 @@
-image: /home/uav/Data/KNOY_speedway.pgm
+image: /home/crl4/ros_ws/src/myrallycar/resources/map/KNOY_speedway.pgm
 resolution: 0.050000
 origin: [-51.224998, -51.224998, 0.000000]
 negate: 0

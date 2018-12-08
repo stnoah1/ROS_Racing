@@ -1,4 +1,4 @@
-image: /home/crl3/ros_ws/src/map_follower/resources/map/hallway.pgm
+image: /home/crl4/ros_ws/src/myrallycar/resources/map/hallway.pgm
 resolution: 0.050000
 origin: [-51.224998, -51.224998, 0.000000]
 negate: 0

@@ -4,8 +4,8 @@
 	<node pkg="tf" type="static_transform_publisher" name="base_to_laser" args="0.0 0.0 0.0 0.0 0.0 0.0 /base /laser 100" />
 
 	<!-- use hector_mapping for providing odometry to amcl  -->
-	<arg name="map_size" default="512"/>
-	<arg name="map_resolution" default="0.1"/>
+	<arg name="map_size" default="2048"/>
+	<arg name="map_resolution" default="0.05"/>
 
 	<node pkg="hector_mapping" type="hector_mapping" name="hector_mapping" output="screen">
 		<remap from="map" to="/mapcurrent" />

@@ -16,14 +16,11 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   geometry_msgs
-  gazebo_ros
   tf
   urg_node
   nav_msgs
 )
-find_package(gazebo REQUIRED)
 
-include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFormat_INCLUDE_DIRS})
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -114,11 +111,8 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS} ${SDFo
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  DEPENDS
-    gazebo_ros 
-  INCLUDE_DIRS include
   LIBRARIES map_follower
-  CATKIN_DEPENDS sensor_msgs geometry_msgs hokuyo_node map_server nav_msgs roscpp rospy rviz std_msgs tf urg_node
+  CATKIN_DEPENDS sensor_msgs geometry_msgs map_server nav_msgs roscpp rospy rviz std_msgs tf urg_node
   DEPENDS system_lib
 )
 
@@ -128,10 +122,6 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-include_directories(
-# include
-  ${catkin_INCLUDE_DIRS}
-)
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
