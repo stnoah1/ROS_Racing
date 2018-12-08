@@ -26,14 +26,11 @@ This is for ECET581 racing project
 * [ ] add linear interpolation funtion
 * [ ] set the optimal parameters
 * [ ] submit the code
-
-### Lab 5 - prob1
+### Lab 5 - prob2
 * [ ] add imu info
 * [ ] set the optimal parameters
 * [ ] submit the code
-
-
-### racing
+### Racing
 * [ ] optimize parameters with best results
 
 ## Install
