@@ -4,6 +4,8 @@ import serial
 import rospy
 from std_msgs.msg import Float32
 
+G = 9.807
+
 
 def kalman_filter(value):
   "https://github.com/rocheparadox/Kalman-Filter-Python-for-mpu6050"
@@ -12,7 +14,7 @@ def kalman_filter(value):
 
 def parse_serial(ang_vel):
   sign = ang_vel[1]
-  value = int(ang_vel[2:7])
+  value = int(ang_vel[2:7]) / (2 * G)
   if sign == '+':
     return value
   else:
