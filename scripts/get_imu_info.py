@@ -3,15 +3,20 @@
 import serial
 import rospy
 from std_msgs.msg import Float32
-import time
 
 
 def kalman_filter(value):
+  "https://github.com/rocheparadox/Kalman-Filter-Python-for-mpu6050"
   return value
 
 
-def parse_serial(serial_data):
-  return serial_data
+def parse_serial(ang_vel):
+  sign = ang_vel[1]
+  value = int(ang_vel[2:7])
+  if sign == '+':
+    return value
+  else:
+    return -1 * value
 
 
 def get_serial_data():
@@ -25,17 +30,10 @@ def get_serial_data():
   ser.write('IMU1')
   while True:
     serial_data = ser.readline().strip()
-    print(serial_data)
-    ang_vel = parse_serial(serial_data)
-    filtered_ang_vel = kalman_filter(ang_vel)
-    if filtered_ang_vel.startswith('I'):
-      sign = filtered_ang_vel[1]
-      value = int(filtered_ang_vel[2:7])
-      if sign == '+':
-        pub.publish(value)
-      else:
-        pub.publish(-1 * value)
-    # ax
+    if serial_data.startswith('I'):
+      filtered_ang_vel = kalman_filter(serial_data)
+      ax = parse_serial(filtered_ang_vel)
+      pub.publish(ax)
 
 
 if __name__ == "__main__":
