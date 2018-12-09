@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
+import csv
+import time
+from math import pow, atan2, sqrt, cos, sin
+
 import rospy
+import serial
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String, Float32
-from math import pow, atan2, sqrt, cos, sin
-import time
-import serial
 
 
 class RallyCar:
@@ -85,7 +87,7 @@ class RallyCar:
     time_delta = self.amcl_stamp - self.prev_amcl_stamp
     distant_delta = sqrt(pow((self.pose_x - self.prev_amcl_pose_x), 2) + pow((self.pose_y - self.prev_amcl_pose_y), 2))
     theta_delta = self.theta - self.prev_amcl_theta
-    
+
     self.estimate_linear_vel = round(distant_delta / time_delta, 4)
     self.estimate_angular_vel = round(theta_delta / time_delta, 4)
 
@@ -165,44 +167,16 @@ class RallyCar:
     rospy.spin()
 
   def shutdown(self):
-    self.send_serial(2000, 200)
+    self.send_serial(self.bias, 0)
 
 
 if __name__ == '__main__':
   try:
-    WAY_POINTS = [
-      (2.27361798286, 1.04696655273),
-      (2.49206614494, 3.555751323),
-      (2.47692918777, 5.60992193222),
-      (2.47692918777, 7.60992193222),
-      (2.57692918777, 9.60992193222),
-      (2.67692918777, 11.60992193222),
-      (2.77692918777, 13.60992193222),
-      (2.87692918777, 15.60992193222),
-      (2.97692918777, 17.60992193222),
-      (3.17692918777, 19.60992193222),
-      (3.27692918777, 21.60992193222),
-      (3.27692918777, 23.60992193222),
-      (3.27692918777, 25.60992193222),
-      (3.27692918777, 27.60992193222),
-      (3.27692918777, 29.60992193222),
-      (3.27692918777, 31.60992193222),
-      (3.27692918777, 33.60992193222),
-      (3.27692918777, 35.60992193222),
-      (3.27692918777, 37.60992193222),
-      (-1.39152431488, 38.3741378784),
-      (-3.39152431488, 38.3741378784),
-      (-5.39152431488, 38.3741378784),
-      # (2.57075452805, 11.1395378113),
-      # (2.80263257027, 16.9178562164),
-      # (2.94566726685, 21.8589191437),
-      # (2.91902089119, 26.6184883118),
-      # (3.08603787422, 33.2159004211),
-      (2.95427036285, 38.4813156128),
-      (-1.39152431488, 38.3741378784),
-    ]
-    print('start')
+    with open('way_point_speed_map.csv', newline='') as way_points:
+      WAY_POINTS = list(csv.reader(way_points))
+    print('load way_points')
     rally_car = RallyCar(way_points=WAY_POINTS)
+    print('start')
     # rally_car.shutdown()
     rally_car.move2goal()
 
