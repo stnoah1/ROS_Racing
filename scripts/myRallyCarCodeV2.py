@@ -2,7 +2,7 @@
 
 import rospy
 from geometry_msgs.msg import Pose
-from std_msgs.msg import String
+from std_msgs.msg import String, Float32
 from math import pow, atan2, sqrt, cos, sin
 import time
 import serial
@@ -38,6 +38,8 @@ class RallyCar:
     self.amcl_theta = 0
     self.amcl_stamp = time.time()
 
+    self.imu_stamp = time.time()
+
     self.pose_x = 0
     self.pose_y = 0
     self.theta = 0
@@ -53,6 +55,10 @@ class RallyCar:
     # A subscriber to the topic 'cur_pos'. self.update_pose is called
     # when a message of type Pose is received.
     self.pose_subscriber = rospy.Subscriber('/cur_pos', String, self.update_pose)
+    self.imu_info_subscriber = rospy.Subscriber('/imu_info', Float32, self.update_angular_vel)
+
+    self.linear_vel = 0
+    self.angular_vel = 0
 
     # Initialize steering
     self.send_serial(self.bias, 0)
@@ -79,22 +85,30 @@ class RallyCar:
     time_delta = self.amcl_stamp - self.prev_amcl_stamp
     distant_delta = sqrt(pow((self.pose_x - self.prev_amcl_pose_x), 2) + pow((self.pose_y - self.prev_amcl_pose_y), 2))
     theta_delta = self.theta - self.prev_amcl_theta
+    
     self.estimate_linear_vel = round(distant_delta / time_delta, 4)
     self.estimate_angular_vel = round(theta_delta / time_delta, 4)
 
+    self.linear_vel = self.estimate_linear_vel
+    self.angular_vel = self.estimate_angular_vel
+
     # rospy.loginfo("Current AMCL pose: x=" + str(self.pos_x) + "/ y=" + str(self.pos_y) + "/ theta=" + str(self.theta))
+
+  def update_angular_vel(self, data):
+    self.angular_vel = self.angular_vel + data.data * (time.time() - self.imu_stamp)
+    self.imu_stamp = time.time()
 
   def interpolate_linear_vel(self):
     time_delta = time.time() - self.amcl_stamp
-    self.theta = self.estimate_angular_vel * time_delta + self.theta
-    self.pose_x = self.amcl_pose_x + self.estimate_linear_vel * time_delta * cos(self.theta)
-    self.pose_y = self.amcl_pose_y + self.estimate_linear_vel * time_delta * sin(self.theta)
+    self.theta = self.angular_vel * time_delta + self.theta
+    self.pose_x = self.amcl_pose_x + self.linear_vel * time_delta * cos(self.theta)
+    self.pose_y = self.amcl_pose_y + self.linear_vel * time_delta * sin(self.theta)
 
   def euclidean_distance(self, goal_pose):
     """Euclidean distance between current pose and the goal."""
     return sqrt(pow((goal_pose.position.x - self.pose_x), 2) + pow((goal_pose.position.y - self.pose_y), 2))
 
-  def linear_vel(self, goal_pose):
+  def set_linear_vel(self, goal_pose):
     """PD Controller for linear velocity"""
     self.prev_linear_vel_error = self.linear_vel_error
     self.linear_vel_error = self.euclidean_distance(goal_pose)
@@ -105,7 +119,7 @@ class RallyCar:
     """angle between current pose and the goal"""
     return atan2(goal_pose.position.y - self.pose_y, goal_pose.position.x - self.pose_x)
 
-  def angular_vel(self, goal_pose):
+  def set_angular_vel(self, goal_pose):
     """PD Controller for angular velocity"""
     self.prev_angular_vel_error = self.angular_vel_error
     self.angular_vel_error = (self.theta - self.steering_angle(goal_pose))
@@ -117,7 +131,6 @@ class RallyCar:
       sign = '+'
     else:
       sign = '-'
-    # todo: update
     serial_signal = "A{}{}+{}".format(sign, "%04d" % abs(steering_angle), "%04d" % gas_pedal)
     print(serial_signal)
     # construct and send the Ackermann steering commands to Car
@@ -139,7 +152,7 @@ class RallyCar:
         # interpolate current position
         self.interpolate_linear_vel(self)
         # send serial
-        self.send_serial(self.angular_vel(goal_pose), self.linear_vel(goal_pose))
+        self.send_serial(self.set_angular_vel(goal_pose), self.set_linear_vel(goal_pose))
 
         # Publish at the desired rate.
         self.rate.sleep()
