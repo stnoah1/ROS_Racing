@@ -27,16 +27,10 @@ class CurrentPosition:
     self.amcl_time = rospy.Time.now()
     rospy.loginfo("Current AMCL pose: x=" + str(self.amcl_x) + "/ y=" + str(self.amcl_y) + "/ theta=" + str(self.theta))
 
-  def estimate_pos(self):
-    """todo: modify function to estimate the pos"""
-    cur_pose = "{};{};{}".format(self.amcl_x, self.amcl_y, self.theta)
-
-    return cur_pose
-
   def publish(self):
     print("publish")
     while not rospy.is_shutdown():
-      cur_pose = self.estimate_pos()
+      cur_pose = "{};{};{}".format(self.amcl_x, self.amcl_y, self.theta)
       self.pub.publish(cur_pose)
       self.rate.sleep()
     rospy.spin()

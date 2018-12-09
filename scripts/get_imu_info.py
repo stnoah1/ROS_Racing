@@ -22,7 +22,6 @@ def parse_serial(ang_vel):
 
 
 def get_serial_data():
-  # todo:update
   pub = rospy.Publisher('imu_info', Float32, queue_size=10)
   ser = serial.Serial("/dev/ttyACM0", baudrate=115200)
   ser.close()
