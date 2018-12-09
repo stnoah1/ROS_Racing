@@ -3,7 +3,7 @@
 import rospy
 from geometry_msgs.msg import Pose
 from std_msgs.msg import String
-from math import pow, atan2, sqrt
+from math import pow, atan2, sqrt, cos, sin
 import time
 import serial
 
@@ -14,46 +14,85 @@ class RallyCar:
     print('initialize param')
     rospy.init_node('rallycar_controller', anonymous=True)
 
-    # initialize parameters
-    self.bias = 430
-    self.pos_x = 0
-    self.pos_y = 0
-    self.theta = 0
-    self.rate = rospy.Rate(150)
-    self.way_points = way_points
-    self.prev_angular_vel_error = 0
-    self.angular_vel_error = 0
-    self.prev_linear_vel_error = 0
-    self.linear_vel_error = 0
-
-    # parameters to set up
+    # Set up constants
     self.distance_tolerance = 1
     self.angular_vel_Kp = 1000
     self.angular_vel_Kd = 40
     self.linear_vel_Kp = 70
     self.linear_vel_Kd = 70
 
+    self.bias = 430
+    self.freq = 150
+
+    # initialize parameters
+    self.rate = rospy.Rate(self.freq)
+    self.way_points = way_points
+
+    self.prev_amcl_pose_x = 0
+    self.prev_amcl_pose_y = 0
+    self.prev_amcl_theta = 0
+    self.prev_amcl_stamp = time.time()
+
+    self.amcl_pose_x = 0
+    self.amcl_pose_y = 0
+    self.amcl_theta = 0
+    self.amcl_stamp = time.time()
+
+    self.pose_x = 0
+    self.pose_y = 0
+    self.theta = 0
+
+    self.prev_angular_vel_error = 0
+    self.prev_linear_vel_error = 0
+    self.angular_vel_error = 0
+    self.linear_vel_error = 0
+
+    self.estimate_linear_vel = 0
+    self.estimate_angular_vel = 0
+
     # A subscriber to the topic 'cur_pos'. self.update_pose is called
     # when a message of type Pose is received.
     self.pose_subscriber = rospy.Subscriber('/cur_pos', String, self.update_pose)
 
-    # self.console_ser.close()
-    # self.console_ser.open()
+    # Initialize steering
     self.send_serial(self.bias, 0)
-    time.sleep(3)
+    time.sleep(1)
 
   def update_pose(self, data):
     """Callback function which is called when a new message of type Pose is
     received by the subscriber."""
-    pos = data.data.split(";")
-    self.pos_x = round(float(pos[0]), 4)
-    self.pos_y = round(float(pos[1]), 4)
-    self.theta = round(float(pos[2]), 4)
+    self.prev_amcl_pose_x = self.amcl_pose_x
+    self.prev_amcl_pose_y = self.amcl_pose_y
+    self.prev_amcl_theta = self.amcl_theta
+    self.prev_amcl_stamp = self.amcl_stamp
+
+    pose = data.data.split(";")
+    self.amcl_pose_x = round(float(pose[0]), 4)
+    self.amcl_pose_y = round(float(pose[1]), 4)
+    self.amcl_theta = round(float(pose[2]), 4)
+
+    self.pose_x = self.amcl_pose_x
+    self.pose_y = self.amcl_pose_y
+    self.theta = self.amcl_theta
+    self.amcl_stamp = time.time()
+
+    time_delta = self.amcl_stamp - self.prev_amcl_stamp
+    distant_delta = sqrt(pow((self.pose_x - self.prev_amcl_pose_x), 2) + pow((self.pose_y - self.prev_amcl_pose_y), 2))
+    theta_delta = self.theta - self.prev_amcl_theta
+    self.estimate_linear_vel = round(distant_delta / time_delta, 4)
+    self.estimate_angular_vel = round(theta_delta / time_delta, 4)
+
     # rospy.loginfo("Current AMCL pose: x=" + str(self.pos_x) + "/ y=" + str(self.pos_y) + "/ theta=" + str(self.theta))
+
+  def interpolate_linear_vel(self):
+    time_delta = time.time() - self.amcl_stamp
+    self.theta = self.estimate_angular_vel * time_delta + self.theta
+    self.pose_x = self.amcl_pose_x + self.estimate_linear_vel * time_delta * cos(self.theta)
+    self.pose_y = self.amcl_pose_y + self.estimate_linear_vel * time_delta * sin(self.theta)
 
   def euclidean_distance(self, goal_pose):
     """Euclidean distance between current pose and the goal."""
-    return sqrt(pow((goal_pose.position.x - self.pos_x), 2) + pow((goal_pose.position.y - self.pos_y), 2))
+    return sqrt(pow((goal_pose.position.x - self.pose_x), 2) + pow((goal_pose.position.y - self.pose_y), 2))
 
   def linear_vel(self, goal_pose):
     """PD Controller for linear velocity"""
@@ -64,7 +103,7 @@ class RallyCar:
 
   def steering_angle(self, goal_pose):
     """angle between current pose and the goal"""
-    return atan2(goal_pose.position.y - self.pos_y, goal_pose.position.x - self.pos_x)
+    return atan2(goal_pose.position.y - self.pose_y, goal_pose.position.x - self.pose_x)
 
   def angular_vel(self, goal_pose):
     """PD Controller for angular velocity"""
@@ -96,9 +135,10 @@ class RallyCar:
 
       while self.euclidean_distance(goal_pose) >= self.distance_tolerance:
         # print(self.euclidean_distance(goal_pose))
+
+        # interpolate current position
+        self.interpolate_linear_vel(self)
         # send serial
-        linear_vel = self.linear_vel(goal_pose)
-        angular_vel = self.angular_vel(goal_pose)
         self.send_serial(self.angular_vel(goal_pose), self.linear_vel(goal_pose))
 
         # Publish at the desired rate.
