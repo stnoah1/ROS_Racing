@@ -12,8 +12,8 @@ from std_msgs.msg import String, Float32
 
 class RallyCar:
   def __init__(self, way_points):
-    # Creates a node with name 'rallycar_controller' and make sure it is a unique node (using anonymous=True).
-    print('initialize param')
+    # Creates a node with name 'rallycar_controller'.
+    print('initialize params')
     rospy.init_node('rallycar_controller', anonymous=True)
 
     # Set up constants
@@ -54,13 +54,14 @@ class RallyCar:
     self.estimate_linear_vel = 0
     self.estimate_angular_vel = 0
 
-    # A subscriber to the topic 'cur_pos'. self.update_pose is called
-    # when a message of type Pose is received.
-    self.pose_subscriber = rospy.Subscriber('/cur_pos', String, self.update_pose)
-    self.imu_info_subscriber = rospy.Subscriber('/imu_info', Float32, self.update_angular_vel)
-
     self.linear_vel = 0
     self.angular_vel = 0
+
+    # A subscriber to the topic 'cur_pos'. self.update_pose is called when a message of type Pose is received.
+    self.pose_subscriber = rospy.Subscriber('/cur_pos', String, self.update_pose)
+
+    # A subscriber to the topic 'imu_info'. self.update_angular_vel is called when a message of type Pose is received.
+    # self.imu_info_subscriber = rospy.Subscriber('/imu_info', Float32, self.update_angular_vel)
 
     # Initialize steering
     self.send_serial(self.bias, 0)
@@ -152,7 +153,8 @@ class RallyCar:
         # print(self.euclidean_distance(goal_pose))
 
         # interpolate current position
-        self.interpolate_linear_vel(self)
+        # self.interpolate_linear_vel()
+
         # send serial
         self.send_serial(self.set_angular_vel(goal_pose), self.set_linear_vel(goal_pose))
 
