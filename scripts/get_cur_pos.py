@@ -24,7 +24,6 @@ class CurrentPosition:
 
     euler = euler_from_quaternion(orientationQ)
     self.theta = euler[2]
-    self.amcl_time = rospy.Time.now()
     rospy.loginfo("Current AMCL pose: x=" + str(self.amcl_x) + "/ y=" + str(self.amcl_y) + "/ theta=" + str(self.theta))
 
   def publish(self):
