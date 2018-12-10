@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+#
+## Course: ECET581 Fall2018
+## Authors: Hyung-gun Chi and Donghun Lee
+## This file subscribe the topic 'imu_info' from imu seirial, 'cur_pos' from amcl
+## and PD control the rallycar based on these informations.
 
 import csv
 import time
@@ -63,18 +68,16 @@ class RallyCar:
     self.console_ser = serial.Serial("/dev/ttyACM0", baudrate=115200)
     self.console_ser.close()
     self.console_ser.open()
-    # while self.console_ser.inWaiting() == 0:
-    #   pass
 
     # A subscriber to the topic 'imu_info'. self.update_angular_vel is called when a message of type Float is received.
-    # self.imu_info_subscriber = rospy.Subscriber('/imu_info', Float32, self.update_angular_vel)
+    self.imu_info_subscriber = rospy.Subscriber('/imu_info', Float32, self.update_angular_vel)
 
     # Initialize steering
     self.send_serial(self.bias, 0)
     time.sleep(1)
 
   def update_pose(self, data):
-    """Callback function which is called when a new message of type Pose is received by the subscriber."""
+    """Callback function which is called when a new message of type current position is received by the subscriber."""
     self.prev_amcl_pose_x = self.amcl_pose_x
     self.prev_amcl_pose_y = self.amcl_pose_y
     self.prev_amcl_theta = self.amcl_theta
@@ -93,22 +96,21 @@ class RallyCar:
     time_delta = self.amcl_stamp - self.prev_amcl_stamp
     # print(self.amcl_pose_x, self.prev_amcl_pose_x)
     distant_delta = sqrt(pow((self.pose_x - self.prev_amcl_pose_x), 2) + pow((self.pose_y - self.prev_amcl_pose_y), 2))
-    # theta_delta = self.theta - self.prev_amcl_theta
 
     self.estimate_linear_vel = distant_delta / time_delta
-    # self.estimate_angular_vel = theta_delta / time_delta
 
     self.linear_vel = self.estimate_linear_vel
-    # self.angular_vel = self.estimate_angular_vel
-    print("amcl updat2!!!", self.pose_x, self.pose_y, self.theta)
+    print("amcl update!!!", self.pose_x, self.pose_y, self.theta)
 
     # rospy.loginfo("Current AMCL pose: x=" + str(self.pos_x) + "/ y=" + str(self.pos_y) + "/ theta=" + str(self.theta))
 
   def update_angular_vel(self, data):
-    self.angular_vel = self.angular_vel + data.data * (time.time() - self.imu_stamp)
+    """update angular velocity with IMU data"""
+    self.angular_vel = self.angular_vel + float(data.data) * (time.time() - self.imu_stamp)
     self.imu_stamp = time.time()
 
   def interpolate_linear_vel(self):
+    """Interpolate the linear velocity depend on last two AMCL points and angular velocity"""
     time_delta = time.time() - self.amcl_stamp
     # self.theta = self.angular_vel * time_delta + self.theta
     self.pose_x = self.amcl_pose_x + self.linear_vel * time_delta * cos(self.angular_vel)
@@ -126,6 +128,7 @@ class RallyCar:
     linear_vel = self.linear_vel_Kp * self.linear_vel_error + \
                  self.linear_vel_Kd * (self.linear_vel_error - self.prev_linear_vel_error)
 
+    # Flip the values bigger than 2048
     if linear_vel > 2048:
       linear_vel = 2048
     return linear_vel
@@ -138,6 +141,7 @@ class RallyCar:
     """PD Controller for angular velocity"""
     self.prev_angular_vel_error = self.angular_vel_error
     err = (self.theta - self.steering_angle(goal_pose))
+    # Adjust value of steering angle which is outside -pi ~ pi
     if err > pi:
       err = err - 2 * pi
     elif err < -pi:
@@ -146,6 +150,7 @@ class RallyCar:
     angular_vel = self.angular_vel_Kp * self.angular_vel_error + \
                   self.angular_vel_Kd * (self.angular_vel_error - self.prev_angular_vel_error) + 200
 
+    # Flip the values outside the boundary of -2048 ~ 2048
     if angular_vel > 2048:
       angular_vel = 2048
     elif angular_vel < -2048:
@@ -153,6 +158,7 @@ class RallyCar:
     return angular_vel
 
   def send_serial(self, steering_angle, gas_pedal):
+    """Send serial a message to rally car to control"""
     if steering_angle > 0:
       sign = '+'
     else:
@@ -170,15 +176,18 @@ class RallyCar:
       goal_pose.position.x = float(way_point[0])
       goal_pose.position.y = float(way_point[1])
 
+      # update the waypoint if the distance between the goal is less than distance_tolerance.
       while self.euclidean_distance(goal_pose) >= self.distance_tolerance:
         # print(self.euclidean_distance(goal_pose))
 
         # interpolate current position
-        # self.interpolate_linear_vel()
+        self.interpolate_linear_vel()
 
         self.angular_vel = self.set_angular_vel(goal_pose)
+
         # send serial
         self.send_serial(self.angular_vel, self.set_linear_vel(goal_pose))
+
         # Publish at the desired rate.
         self.rate.sleep()
       print(way_point)
@@ -195,11 +204,14 @@ class RallyCar:
 
 if __name__ == '__main__':
   try:
+    # read the waypoint file
     with open('/home/crl4/ros_ws/src/myrallycar/scripts/way_point_speed_map.csv') as way_points:
       WAY_POINTS = list(csv.reader(way_points))
-    # for demo map
+
+    # For the demo map
     # with open('/home/crl4/ros_ws/src/myrallycar/scripts/ui_auto_demo.txt') as way_points:
     #   WAY_POINTS = [i.strip().split(' ')[:2] for i in way_points.readlines()]
+
     print('load way_points')
     rally_car = RallyCar(way_points=WAY_POINTS)
     print('start')

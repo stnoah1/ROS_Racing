@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+## Course: ECET581 Fall2018
+## Authors: Hyung-gun Chi and Donghun Lee
+## This file publishes the topic 'imu_info' after read the serial data from the serial port
+
+
 import serial
 import rospy
 from std_msgs.msg import Float32
@@ -13,6 +18,7 @@ def kalman_filter(value):
 
 
 def parse_serial(ang_vel):
+  """Parse imu data with the unit of m/s^2"""
   sign = ang_vel[1]
   value = int(ang_vel[2:7]) / (2 * G)
   if sign == '+':
