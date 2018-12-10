@@ -24,18 +24,26 @@ class CurrentPosition:
 
     euler = euler_from_quaternion(orientationQ)
     self.theta = euler[2]
-    rospy.loginfo("Current AMCL pose: x=" + str(self.amcl_x) + "/ y=" + str(self.amcl_y) + "/ theta=" + str(self.theta))
-
-  def publish(self):
-    print("publish")
-    while not rospy.is_shutdown():
+    if not rospy.is_shutdown():
+      # rospy.loginfo("Current AMCL pose: x=" + str(self.amcl_x) + "/ y=" + str(self.amcl_y) + "/ theta=" + str(self.theta))
       cur_pose = "{};{};{}".format(self.amcl_x, self.amcl_y, self.theta)
       self.pub.publish(cur_pose)
-      self.rate.sleep()
+
+  def run(self):
     rospy.spin()
+
+
+# def publish(self):
+  #   print("publish")
+  #   while not rospy.is_shutdown():
+  #     cur_pose = "{};{};{}".format(self.amcl_x, self.amcl_y, self.theta)
+  #     self.pub.publish(cur_pose)
+  #     self.rate.sleep()
+  #   rospy.spin()
 
 
 if __name__ == "__main__":
   rospy.init_node("cur_pos", anonymous=True)
   cur_pose = CurrentPosition()
-  cur_pose.publish()
+  cur_pose.run()
+  # cur_pose.publish()
